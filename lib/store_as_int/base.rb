@@ -46,7 +46,7 @@ module StoreAsInt
       return self.num = 0 unless new_val
 
       if new_val.is_a?(self.class)
-        puts self.num = new_val.value
+        self.num = new_val.value
       elsif new_val.is_a?(Integer)
         self.num = new_val
       else
