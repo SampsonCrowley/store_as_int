@@ -87,15 +87,31 @@ module StoreAsInt
   def self.register(under_scored_class_name, base_value = 1, number_of_decimals = 0, symbol_to_use = '', &block)
     const_name = under_scored_class_name.split('_').map(&:capitalize).join('')
 
-    const_set const_name, Class.new(StoreAsInt::Base)
+    begin
+      const_get(const_name)
 
-    const_get(const_name).const_set 'BASE', (base_value && base_value.to_i) || 1
-    const_get(const_name).const_set 'DECIMALS', number_of_decimals.to_i
-    const_get(const_name).const_set 'SYM', symbol_to_use.to_s
-    const_get(const_name).const_set 'STR_FORMAT', block || nil
+      puts "WARNING - #{const_name} Already Registered. Nothing has been done"
+    rescue NameError
+      puts "  - Registering StoreAsInt::#{const_name}"
 
-    define_singleton_method name.to_sym do |val|
-      const_get(const_name).new(val)
+      const_set const_name, Class.new(StoreAsInt::Base)
+
+      puts "  - Registering local constants for StoreAsInt::#{const_name}"
+
+      const_get(const_name).const_set 'BASE', (base_value && base_value.to_i) || 1
+      const_get(const_name).const_set 'DECIMALS', number_of_decimals.to_i
+      const_get(const_name).const_set 'SYM', symbol_to_use.to_s
+      const_get(const_name).const_set 'STR_FORMAT', block || nil
+
+      puts "  - Registering shortcut method: StoreAsInt.#{under_scored_class_name}(value)"
+
+      define_singleton_method under_scored_class_name.to_sym do |val|
+        const_get(const_name).new(val)
+      end
+
+      puts "  - StoreAsInt::#{const_name} registered"
     end
+
+    const_get(const_name)
   end
 end
