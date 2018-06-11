@@ -2,13 +2,8 @@
 #
 #   Seamlessly Store Decimal Values as Integers!
 module StoreAsInt
-
-  if defined?(Rails)
-    require_relative 'store_as_int/engine'
-  else
-    require_relative 'store_as_int/exchange_rate'
-    require_relative 'store_as_int/money'
-  end
+  require_relative 'store_as_int/exchange_rate'
+  require_relative 'store_as_int/money'
 
   # Create a new ::ExchangRate
   #
