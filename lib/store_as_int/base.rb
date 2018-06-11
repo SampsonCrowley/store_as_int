@@ -1,8 +1,7 @@
-require 'bigdecimal'
-require 'bigdecimal/util'
-
 module StoreAsInt
   class Base
+    require 'bigdecimal'
+    require 'bigdecimal/util'
 
     # == Constants ============================================================
     BASE = 1

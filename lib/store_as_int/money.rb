@@ -1,7 +1,11 @@
-require_relative './base'
+module StoreAsInt
+  unless defined?(StoreAsInt::Base)
+    require_relative './base'
+  end
 
-class StoreAsInt::Money < StoreAsInt::Base
-  BASE = 100
-  DECIMALS = 2
-  SYM = '$'
+  class Money < StoreAsInt::Base
+    BASE = 100
+    DECIMALS = 2
+    SYM = '$'
+  end
 end
