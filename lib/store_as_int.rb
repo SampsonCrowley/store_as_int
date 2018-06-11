@@ -4,10 +4,10 @@
 module StoreAsInt
 
   if defined?(Rails)
-    require 'store_as_int/engine'
+    require_relative 'store_as_int/engine'
   else
-    require 'store_as_int/exchange_rate'
-    require 'store_as_int/money'
+    require_relative 'store_as_int/exchange_rate'
+    require_relative 'store_as_int/money'
   end
 
   # Create a new ::ExchangRate
