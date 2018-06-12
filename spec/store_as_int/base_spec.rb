@@ -97,7 +97,7 @@ describe 'StoreAsInt::Base' do
         expect(model.new('+#0.12345').value).to eq 12345
         expect(model.new('+#26').value).to eq 2600000
         expect(model.new('-0.12345').value).to eq -12345
-        expect(model.new('-asaa0.12345').value).to eq 12345
+        expect(model.new('-asaa0.12345').value).to eq -12345
         expect(model.new('ASDF').value).to eq 0
       end
 

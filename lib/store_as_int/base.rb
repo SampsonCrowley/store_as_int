@@ -28,9 +28,13 @@ module StoreAsInt
       ) || !!(
         other.instance_of?(String) &&
         (
-          other.gsub(/(,|\s)/, '') =~ /^(\-|\+)?#{Regexp.quote("\\#{sym}" || '[^0-9]')}?([0-9]+)(\.[0-9]+)?$/
+          other.gsub(/(,|\s)/, '') =~ matcher
         )
       )
+    end
+
+    def self.matcher
+      /^(\-|\+)?(?:#{sym.to_s.size > 0 ? Regexp.quote(sym.to_s) : '[^0-9]'}+)?([0-9]+)(\.[0-9]+)?$/
     end
 
     def self.accuracy
@@ -109,8 +113,10 @@ module StoreAsInt
             new_val =
               new_val.
               gsub(/(,|\s)/, '').
-              match(/(\-|\+)?#{Regexp.quote("\\#{sym}" || '[^0-9]')}?([0-9]+)(\.[0-9]+)?$/)[1..-1].join("")
+              match(self.class.matcher)[1..-1].join("")
           rescue NoMethodError
+            puts $!.message
+            puts $!.backtrace
             return self.num = 0
           end
         end
