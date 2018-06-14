@@ -67,7 +67,10 @@ module StoreAsInt
     end
 
     def kind_of?(klass)
-      value.kind_of?(klass) || self.class == klass || super(klass)
+      value.kind_of?(klass) ||
+      self.class == klass ||
+      StoreAsInt == klass ||
+      super(klass)
     end
 
     def instance_of?(klass)
@@ -124,7 +127,7 @@ module StoreAsInt
     end
 
     def as_json(*args)
-      self.num.as_json(*args)
+      to_h
     end
 
     def base
@@ -180,8 +183,32 @@ module StoreAsInt
       to_i/base_float
     end
 
+    def to_h
+      {
+        accuracy: accuracy,
+        base: base,
+        decimal: to_d,
+        decimals: decimals,
+        float: to_f,
+        str: to_s,
+        str_format: str_format,
+        str_pretty: to_s(true),
+        sym: sym,
+        value: value,
+      }
+    end
+
     def to_i
       self.num.to_i
+    end
+
+    def to_json(*args)
+      begin
+        self.to_h.to_json
+      rescue NoMethodError
+        require 'json'
+        JSON.unparse(to_h)
+      end
     end
 
     def to_s(w_sym = false)
