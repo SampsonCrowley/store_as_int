@@ -136,14 +136,20 @@ describe StoreAsInt::Base do
       context 'strings' do
         context "valid pattern" do
           it "cooerces to base accuracy" do
-            expect(subject.new('1.0').value).to eq 10 ** subject.accuracy
-            expect(subject.new('1').value).to eq 10 ** subject.accuracy
-            expect(subject.new('+$1.00').value).to eq 10 ** subject.accuracy
-            expect(subject.new('+$0.12345').value).to eq 12345
-            expect(subject.new('+#0.12345').value).to eq 12345
-            expect(subject.new('+#26').value).to eq 2600000
-            expect(subject.new('-0.12345').value).to eq -12345
-            expect(subject.new('-asaa0.12345').value).to eq 12345
+            [
+              ['1.0', (10 ** subject.accuracy)],
+              ['1', (10 ** subject.accuracy)],
+              ['$1.00', (10 ** subject.accuracy)],
+              ['$0.12345', (12345)],
+              ['#0.12345', (12345)],
+              ['#26', (2600000)],
+              ['0.12345', (12345)],
+              ['asaa0.12345', (12345)],
+            ].each do |str, val|
+              expect(subject.new(str).value).to eq val
+              expect(subject.new("+#{str}").value).to eq val
+              expect(subject.new("-#{str}").value).to eq -val
+            end
           end
         end
 
