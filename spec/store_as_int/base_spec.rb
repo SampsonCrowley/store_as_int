@@ -247,19 +247,47 @@ describe StoreAsInt::Base do
 
         context 'invalid class chain' do
           it 'returns false' do
+            require_relative '../../lib/store_as_int/money'
             expect(subject.is_a? StoreAsInt::Money).to eq false
             expect(subject.is_a? String).to eq false
           end
         end
       end
+
       describe 'instance_of?' do
         context "own class" do
           it 'returns true' do
+            expect(subject.instance_of? subject.class).to eq true
+          end
+        end
+        context 'anything else' do
+          it 'returns false' do
+            expect(subject.instance_of? Integer).to eq false
           end
         end
       end
 
       describe 'present?' do
+        context 'nil' do
+          it "should return false" do
+            expect(StoreAsInt::Base.new.present?).to eq false
+          end
+        end
+
+        context 'empty string' do
+          it "should return false" do
+            expect(StoreAsInt::Base.new('').present?).to eq false
+          end
+        end
+
+        context 'numeric' do
+          it "should return true" do
+            [0, 0.0, 1.to_f, -1, BigDecimal.new(0.1234567890, 10)].each do |val|
+              expect(StoreAsInt::Base.new(val).present?).to eq true
+            end
+          end
+        end
+
       end
     end
 
@@ -283,15 +311,21 @@ describe StoreAsInt::Base do
       describe "base_float"
       describe "coerce"
       describe "convert"
+
       describe "decimals" do
         it_behaves_like "a class method instance", :decimals
       end
+
       describe "inspect"
+
       describe "method_missing"
+
       describe "negative_sign"
+
       describe "sym" do
         it_behaves_like "a class method instance", :sym, '', true
       end
+
       describe "sym=" do
         it "sets the instance variable @sym" do
           subject.sym = "$"
@@ -301,13 +335,44 @@ describe StoreAsInt::Base do
           expect(subject.sym).to eq '#'
         end
       end
-      describe "to_d"
-      describe "to_f"
+
+      describe "to_d" do
+        it "should return the BigDecimal value" do
+          bd = BigDecimal.new(1.0, subject.accuracy)
+          expect(StoreAsInt::Base.new(bd).to_d).to eq bd
+        end
+      end
+
+      describe "to_f" do
+        it "should return the floated value" do
+          expect(StoreAsInt::Base.new(1.0).to_f).to be 1.0
+        end
+      end
+
       describe "to_h"
+
       describe "to_i"
+
       describe "to_json"
+
       describe "to_s"
-      describe "value"
+
+      describe "value" do
+        context 'present?' do
+          it "should return the converted integer value" do
+            expect(StoreAsInt::Base.new('1.0').value).to eq (10 ** subject.accuracy).to_i
+            expect(StoreAsInt::Base.new('1.0').value).to be_an Integer
+            expect(StoreAsInt::Base.new(1).value).to eq 1
+          end
+        end
+
+        context '!present?' do
+          it "should return 0" do
+            expect(StoreAsInt::Base.new.value).to eq 0
+            expect(StoreAsInt::Base.new('').value).to eq 0
+          end
+        end
+      end
     end
   end
 end

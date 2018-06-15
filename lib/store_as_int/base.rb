@@ -104,7 +104,7 @@ module StoreAsInt
 
     # == Instance Methods =====================================================
     def initialize(new_val = nil)
-      return self.num = nil unless new_val
+      return self.num = nil unless new_val && (new_val != '')
 
       if new_val.is_a?(self.class)
         self.num = new_val.value
