@@ -62,6 +62,10 @@ module StoreAsInt
     end
 
     # == Boolean Methods ======================================================
+    def duplicable?
+      true
+    end
+
     def is_a?(klass)
       kind_of?(klass)
     end
@@ -154,13 +158,21 @@ module StoreAsInt
       @decimals ||= self.class.decimals
     end
 
+    def dup
+      self.class.new self.num
+    end
+
     def inspect
       to_s(true)
     end
 
+    def matcher
+      @matcher ||= self.class.matcher
+    end
+    
     def method_missing(name, *args, &blk)
-      if self.class.operators[name.to_sym]
-        self.class.new(value.__send__(name, self.class.new(*args).value))
+      if self.operators[name.to_sym]
+        self.class.new(value.__send__(name, convert(*args).value))
       else
         ret = value.send(name, *args, &blk)
         ret.is_a?(Numeric) ? self.class.new(ret) : ret
@@ -170,6 +182,11 @@ module StoreAsInt
     def negative_sign
       value < 0 ? '-' : ''
     end
+
+    def operators
+      @operators ||= self.class.operators.dup
+    end
+
 
     def sym
       @sym ||= self.class.sym || ''
@@ -196,6 +213,7 @@ module StoreAsInt
         float: to_f,
         str: to_s,
         str_format: str_format,
+        str_matcher: matcher,
         str_pretty: to_s(true),
         sym: sym,
         value: value,
@@ -203,15 +221,17 @@ module StoreAsInt
     end
 
     def to_i
-      self.num.to_i
+      value
     end
 
     def to_json(*args)
+      h = self.to_h
+      h.delete(:str_format)
       begin
-        self.to_h.to_json
+        h.to_json
       rescue NoMethodError
         require 'json'
-        JSON.unparse(to_h)
+        JSON.unparse(h)
       end
     end
 

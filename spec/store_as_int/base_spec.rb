@@ -17,6 +17,8 @@ class InheritedFromBase < StoreAsInt::Base
 end
 
 describe StoreAsInt::Base do
+  before(:each) { Frazzled.set_frazzled false }
+
   subject { StoreAsInt::Base }
   let(:inherited) { InheritedFromBase }
   let(:fifteen) { StoreAsInt::Base.new(15.00) }
@@ -56,6 +58,8 @@ describe StoreAsInt::Base do
       default_constants.each do |constant, value|
         it "should exist for ::#{constant}" do
           expect(subject).to respond_to(constant.downcase.to_sym)
+          expect{subject.__send__(constant.downcase.to_sym)}.to_not raise_error
+
           expect(subject.__send__ constant.downcase).to eq subject.const_get constant
         end
 
@@ -162,6 +166,28 @@ describe StoreAsInt::Base do
       end
     end
 
+    describe 'Abstracts' do
+      subject { StoreAsInt::Base.new 12345 }
+
+      context 'Duplication' do
+        it 'should be duplicable' do
+          expect(subject).to respond_to :dup
+          expect{ subject }.to_not raise_error
+
+          val = subject.value
+          dupped = subject.dup
+
+          expect(subject.dup.value).to eq val
+          expect(dupped).to_not be subject
+
+          dupped += 5000
+
+          expect(subject).to eq val
+          expect(dupped).to_not eq val
+        end
+      end
+    end
+
     describe 'Comparison Methods' do
       describe '<=>' do
         it 'initializes the "other" value then compares values' do
@@ -207,17 +233,41 @@ describe StoreAsInt::Base do
 
     describe 'Boolean Methods' do
       subject { StoreAsInt::Base.new }
+
+      describe 'duplicable?' do
+        it 'should be defined' do
+          expect(subject).to respond_to :duplicable?
+          expect{ subject.dup }.to_not raise_error
+        end
+
+        it 'should return true' do
+          expect(subject.duplicable?).to eq true
+        end
+      end
+
       %w(
         is_a?
         is_an?
       ).each do |str|
         describe str do
+          it 'should be defined' do
+            expect(subject).to respond_to str.to_sym
+            expect{ subject.__send__(str.to_sym, subject.class) }.to_not raise_error
+          end
+
           it 'is an alias for "kind_of?"' do
             expect([subject, str.to_sym]).to be_an_alias_of(:kind_of?).with(Class)
           end
         end
       end
+
       describe 'kind_of?' do
+        it 'should be defined' do
+          expect(subject).to respond_to :kind_of?
+          expect{ subject.kind_of? Class }.to_not raise_error
+
+        end
+
         [
           Integer,
           Numeric,
@@ -308,19 +358,150 @@ describe StoreAsInt::Base do
         it_behaves_like "a class method instance", :base
       end
 
-      describe "base_float"
-      describe "coerce"
-      describe "convert"
+      describe "base_float" do
+        it "is the floated value of base" do
+          expect(subject.base_float).to eq subject.base.to_f
+        end
+      end
+
+      describe "coerce" do
+        let(:coerced) { subject.coerce 123 }
+        it "should return an array of the current class" do
+          expect(coerced).to be_an Array
+          expect(coerced).to all be_a(subject.class)
+        end
+
+        it "should put the cooerced value at the first index" do
+          expect(coerced.first).to_not be subject
+          expect(coerced.first).to_not eq subject
+          expect(coerced.first.value).to eq 123
+        end
+
+        it "should put self second" do
+          expect(coerced[1]).to be subject
+          expect(coerced[1]).to eq subject
+        end
+
+        it "should use convert to coerce the value" do
+          dupped = subject.dup
+          convert_method_was_called = false
+          $allow_numeric_stubbing = true
+          allow(dupped).to receive(:convert).with(123) { convert_method_was_called = true }
+          $allow_numeric_stubbing = false
+
+          dupped.coerce 123
+
+          expect(convert_method_was_called).to eq true
+        end
+
+      end
+
+      describe "convert" do
+        let(:converted) { subject.convert(123)}
+
+        it "initializes a new instance with the passed value" do
+          expect(converted).to be_a subject.class
+          expect(converted).to_not be subject.class
+
+          without_partial_double_verification do
+            dupped = subject.dup
+            method_was_called = false
+            $allow_numeric_stubbing = true
+            allow(dupped).to receive(:new).with(123) { method_was_called = true }
+            $allow_numeric_stubbing = false
+            dupped.convert 123
+          end
+        end
+      end
 
       describe "decimals" do
         it_behaves_like "a class method instance", :decimals
       end
 
-      describe "inspect"
+      describe "inspect" do
+        it "is a shortcut for 'to_s(true)'" do
+          expect([zero, :inspect]).to be_a_shortcut_for(:to_s).with(true)
+        end
+      end
 
-      describe "method_missing"
+      describe "matcher" do
+        it_behaves_like "a class method instance", :matcher
+      end
 
-      describe "negative_sign"
+      describe "method_missing" do
+        before :context do
+          $allow_numeric_stubbing = true
+        end
+        after :context do
+          $allow_numeric_stubbing = false
+        end
+
+        let(:stubbed_convert) do
+          dupped = subject.dup
+          @method_missing_stubbed_convert_was_called = false
+          allow(dupped).to receive(:convert) do |*args|
+            @method_missing_stubbed_convert_was_called = true
+            subject.convert(*args)
+          end
+          dupped
+        end
+
+        context "class operators" do
+          it "converts submitted value, then does integer math" do
+            subject.operators.each do |_, operator|
+              @method_missing_stubbed_convert_was_called = false
+              value = stubbed_convert.__send__(operator, 123)
+              expect(@method_missing_stubbed_convert_was_called).to eq true
+              expect(value).to eq(stubbed_convert.value.__send__(operator, 123))
+            end
+          end
+        end
+
+        context "everything else" do
+          context "valid integer method" do
+            it "delegates to 'value'" do
+              @method_missing_stubbed_convert_was_called = false
+
+              expect(Frazzled.get_frazzled).to eq false
+              expect(stubbed_convert.dazzle).to eq false
+              stubbed_convert.frazzle :dazzle
+              expect(@method_missing_stubbed_convert_was_called).to eq false
+              expect(stubbed_convert.dazzle).to eq true
+              expect(stubbed_convert.dazzle).to eq false
+            end
+          end
+
+          context "no method" do
+            it "throws a NoMethodError" do
+              expect { stubbed_convert.asdf }.to raise_error NoMethodError
+            end
+          end
+        end
+      end
+
+      describe "negative_sign" do
+        subject { StoreAsInt::Base.new 1 }
+        let(:negative) { -subject }
+        it "works" do
+          expect(subject).to respond_to :negative_sign
+          expect{negative.negative_sign}.to_not raise_error
+        end
+        context "negative value" do
+          it "returns a negative symbol" do
+            expect(negative.negative_sign).to eq '-'
+          end
+        end
+
+        context "positive value" do
+          it "returns an empty string" do
+            expect(subject.negative_sign).to eq ''
+          end
+        end
+      end
+
+      describe "operators" do
+        it_behaves_like "a class method instance", :operators
+      end
 
       describe "sym" do
         it_behaves_like "a class method instance", :sym, '', true
@@ -349,13 +530,78 @@ describe StoreAsInt::Base do
         end
       end
 
-      describe "to_h"
+      describe "to_h" do
+        subject { StoreAsInt::Base.new(1.0) }
+        it "should return a hash" do
+          expect(subject.to_h).to be_a Hash
+        end
 
-      describe "to_i"
+        it "details the current state" do
+          val = subject.to_h
+          {
+            accuracy: :accuracy,
+            base: :base,
+            decimal: :to_d,
+            decimals: :decimals,
+            float: :to_f,
+            str: :to_s,
+            str_format: :str_format,
+            str_matcher: :matcher,
+            str_pretty: :inspect,
+            sym: :sym,
+            value: :value,
+          }.each do |key, method|
+            expect(val).to have_key(key)
 
-      describe "to_json"
+            expect(subject.__send__ method).to eq val[key]
+          end
+        end
+      end
 
-      describe "to_s"
+      describe "to_i" do
+        it "returns an integer value" do
+          expect(subject.to_i).to be_an Integer
+        end
+
+        it 'is an alias for "value"' do
+          expect([subject, :to_i]).to be_an_alias_of(:value)
+        end
+      end
+
+      describe "to_json" do
+        it "returns a json string of 'to_h' except for str_formatter" do
+          hashed = subject.to_h
+          hashed.delete(:str_format)
+          json = nil
+          begin
+            json = hashed.to_json
+          rescue NoMethodError
+            require 'json'
+            json = JSON.unparse(hashed)
+          end
+          expect(subject.to_json.to_s).to eq json.to_s
+        end
+      end
+
+      describe "to_s" do
+        context "present?" do
+          context "arg: false, nil (default)" do
+            it "returns a string without 'sym'"
+          end
+          context "arg: true" do
+            it "returns a fully formatted string"
+          end
+        end
+
+        context "!present?" do
+          context "arg: false, nil (default)" do
+            it "returns an empty string"
+          end
+          context "arg: true" do
+            it "returns a fully formatted string"
+          end
+        end
+      end
 
       describe "value" do
         context 'present?' do
