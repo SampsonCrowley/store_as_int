@@ -174,7 +174,11 @@ module StoreAsInt
 
     def method_missing(name, *args, &blk)
       if self.operators[name.to_sym]
-        convert(value.__send__(name, convert(*args).value))
+        if args[0].kind_of?(self.class)
+          convert(value.__send__ name, args[0].value, *args[1..-1])
+        else
+          convert(value.__send__(name, convert(args[0]), *args[1..-1]))
+        end
       else
         ret = value.send(name, *args, &blk)
         ret.is_a?(Numeric) ? convert(ret) : ret
@@ -213,6 +217,7 @@ module StoreAsInt
         decimal: to_d,
         decimals: decimals,
         float: to_f,
+        int: to_i,
         str: to_s,
         str_format: str_format,
         str_matcher: matcher,
@@ -223,7 +228,7 @@ module StoreAsInt
     end
 
     def to_i
-      value
+      value.to_i
     end
 
     def to_json(*args)

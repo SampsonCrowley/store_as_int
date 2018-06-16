@@ -455,6 +455,8 @@ describe StoreAsInt::Base do
       end
 
       describe "method_missing" do
+        subject { StoreAsInt::Base.new 1 }
+
         before :context do
           $allow_numeric_stubbing = true
         end
@@ -479,6 +481,31 @@ describe StoreAsInt::Base do
               value = stubbed_convert.__send__(operator, 123)
               expect(@method_missing_stubbed_convert_was_called).to eq true
               expect(value).to eq(stubbed_convert.value.__send__(operator, 123))
+            end
+          end
+
+          it "directionally equivalent" do
+            one = subject.class.new 1
+            floated = subject.class.new 1.0
+
+            expect(1 + subject).to eq subject + 1
+            expect(1.0 + subject).to eq subject + 1.0
+            expect(1.0 + floated).to eq floated + 1.0
+            expect(1.0 + floated).to eq floated.class.new 2.0
+            expect(floated + 1.0).to eq floated.class.new 2.0
+
+            subject.operators.each do |_, operator|
+              expect(1.__send__(operator, one)).to eq one.__send__(operator, 1)
+              expect(1.__send__(operator, one).to_i).to eq one.__send__(operator, 1).to_i
+              expect(1.0.__send__(operator, floated)).to eq floated.__send__(operator, 1.0)
+              expect(1.0.__send__(operator, floated).to_i).to eq floated.__send__(operator, 1.0).to_i
+              if [:/, :%].include? operator
+                expect { zero.__send__(operator, 0) }.to raise_error ZeroDivisionError
+                expect { 0.__send__(operator, zero) }.to raise_error ZeroDivisionError
+              else
+                expect(0.__send__(operator, zero)).to eq zero.__send__(operator, 0)
+                expect(0.__send__(operator, zero).to_i).to eq zero.__send__(operator, 0).to_i
+              end
             end
           end
         end
@@ -613,8 +640,8 @@ describe StoreAsInt::Base do
           expect(subject.to_i).to be_an Integer
         end
 
-        it 'is an alias for "value"' do
-          expect([subject, :to_i]).to be_an_alias_of(:value)
+        it 'is a shortcut for "value.to_i"' do
+          expect(subject.to_i).to eq subject.value.to_i
         end
       end
 
