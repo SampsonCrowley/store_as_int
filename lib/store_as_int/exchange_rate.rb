@@ -20,6 +20,7 @@ module StoreAsInt
     def self.extend_numerics
       Numeric.include StoreAsInt::ActsAsExchangeRateInt
     end
+
     # == Boolean Methods ======================================================
 
     # == Comparison Methods ===================================================
@@ -36,7 +37,7 @@ module StoreAsInt
 
   module ActsAsExchangeRateInt
     def exchange_rate_str
-      to_cents.to_s(true)
+      to_exchange_rate.to_s(true)
     end
 
     def to_exchange_rate

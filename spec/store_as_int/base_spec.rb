@@ -17,7 +17,7 @@ class InheritedFromBase < StoreAsInt::Base
 end
 
 describe StoreAsInt::Base do
-  before(:each) { Frazzled.set_frazzled false }
+  before(:each) { IntegerFrazzler.set false }
 
   subject { StoreAsInt::Base }
   let(:inherited) { InheritedFromBase }
@@ -86,81 +86,101 @@ describe StoreAsInt::Base do
         end
       end
 
-      context 'real numbers (Floats and Decimals)' do
-        it 'keeps the whole number section and coerces to ::Base accuracy' do
-          accuracy = subject.accuracy || 0
-          [
-            [1.0, 10 ** accuracy],
-            [1.to_f, 10 ** accuracy],
-            [-1.to_f, -(10 ** accuracy)],
-            [0.1234, 12340],
-            [0.123456789, 12345],
-            [1234.to_f, 1234 * (10 ** accuracy)],
-            [BigDecimal.new(0.1234567890, 10), 12345],
-          ].each do |raw, converted|
-            str = raw.to_s
-            int, decimals = str.split(".")
-            val = subject.new(raw).value
-            start = nil
-
-            expect(val).to eq(converted)
-
-            if int == '0'
-              expect(val.to_s).to_not match Regexp.new("^#{int}.*?")
-              start = ""
-            else
-              expect(val.to_s).to match Regexp.new("^#{int}.*?")
-              start = int
-            end
-
-            length = [decimals.size, accuracy].min - 1
-            expected_val = "#{start}#{decimals[0..length]}#{(decimals.size < accuracy) ? ('0' * (accuracy - decimals.size)) : ''}"
-            expect(val.to_s).to match Regexp.new("^#{expected_val}")
-            expect(val).to eq(expected_val.to_i)
-          end
-        end
-      end
-
-      context "whole numbers (Integers)" do
-        it "directly stores value" do
-          (1..10000).each do |i|
-            expect(subject.new(i).value).to eq i
-          end
-
-          expect(subject.new(10 ** subject.accuracy).to_s).to eq '1.00'
-
-          (1..10).each do |i|
-            front = i < 5 ? '0' : ('1' + (i > 5 ? '0' * (i - 5) : ''))
-            back = ((i == 3) && '01') || ((i == 4) && '10') || '00'
-            expect(subject.new(10 ** i).to_s).to eq "#{front}.#{back}"
-          end
-        end
-      end
-
-      context 'strings' do
-        context "valid pattern" do
-          it "cooerces to base accuracy" do
+      describe "Arg 1" do
+        context 'real numbers (Floats and Decimals)' do
+          it 'keeps the whole number section and coerces to ::Base accuracy' do
+            accuracy = subject.accuracy || 0
             [
-              ['1.0', (10 ** subject.accuracy)],
-              ['1', (10 ** subject.accuracy)],
-              ['$1.00', (10 ** subject.accuracy)],
-              ['$0.12345', (12345)],
-              ['#0.12345', (12345)],
-              ['#26', (2600000)],
-              ['0.12345', (12345)],
-              ['asaa0.12345', (12345)],
-            ].each do |str, val|
-              expect(subject.new(str).value).to eq val
-              expect(subject.new("+#{str}").value).to eq val
-              expect(subject.new("-#{str}").value).to eq -val
+              [1.0, 10 ** accuracy],
+              [1.to_f, 10 ** accuracy],
+              [-1.to_f, -(10 ** accuracy)],
+              [0.1234, 12340],
+              [0.123456789, 12345],
+              [1234.to_f, 1234 * (10 ** accuracy)],
+              [BigDecimal.new(0.1234567890, 10), 12345],
+            ].each do |raw, converted|
+              str = raw.to_s
+              int, decimals = str.split(".")
+              val = subject.new(raw).value
+              start = nil
+
+              expect(val).to eq(converted)
+
+              if int == '0'
+                expect(val.to_s).to_not match Regexp.new("^#{int}.*?")
+                start = ""
+              else
+                expect(val.to_s).to match Regexp.new("^#{int}.*?")
+                start = int
+              end
+
+              length = [decimals.size, accuracy].min - 1
+              expected_val = "#{start}#{decimals[0..length]}#{(decimals.size < accuracy) ? ('0' * (accuracy - decimals.size)) : ''}"
+              expect(val.to_s).to match Regexp.new("^#{expected_val}")
+              expect(val).to eq(expected_val.to_i)
             end
           end
         end
 
-        context "invalid pattern" do
-          it 'sets to 0' do
-            expect(subject.new('ASDF').value).to eq 0
-            expect(subject.new('1.0.0').value).to eq 0
+        context "whole numbers (Integers)" do
+          it "directly stores value" do
+            (1..10000).each do |i|
+              expect(subject.new(i).value).to eq i
+            end
+
+            expect(subject.new(10 ** subject.accuracy).to_s).to eq '1.00'
+
+            (1..10).each do |i|
+              front = i < 5 ? '0' : ('1' + (i > 5 ? '0' * (i - 5) : ''))
+              back = ((i == 3) && '01') || ((i == 4) && '10') || '00'
+              expect(subject.new(10 ** i).to_s).to eq "#{front}.#{back}"
+            end
+          end
+        end
+
+        context 'strings' do
+          context "valid pattern" do
+            it "cooerces to base accuracy" do
+              [
+                ['1.0', (10 ** subject.accuracy)],
+                ['1', (10 ** subject.accuracy)],
+                ['$1.00', (10 ** subject.accuracy)],
+                ['$0.12345', (12345)],
+                ['#0.12345', (12345)],
+                ['#26', (2600000)],
+                ['0.12345', (12345)],
+                ['asaa0.12345', (12345)],
+              ].each do |str, val|
+                expect(subject.new(str).value).to eq val
+                expect(subject.new("+#{str}").value).to eq val
+                expect(subject.new("-#{str}").value).to eq -val
+              end
+            end
+          end
+
+          context "invalid pattern" do
+            it 'sets to 0' do
+              expect(subject.new('ASDF').value).to eq 0
+              expect(subject.new('1.0.0').value).to eq 0
+            end
+          end
+        end
+      end
+
+      describe "Arg 2" do
+        context "truthy" do
+          it "sets sym as a string" do
+            expect(subject.new(0, "1").sym).to eq "1"
+            expect(subject.new(0, 1).sym).to eq "1"
+          end
+        end
+
+        context "falsey" do
+          it "keeps the default sym" do
+            default_sym = StoreAsInt::Base.sym || ''
+            expect(subject.new(0).sym).to eq default_sym
+            expect(subject.new(0, nil).sym).to eq default_sym
+            expect(subject.new(0, false).sym).to eq default_sym
           end
         end
       end
@@ -412,6 +432,12 @@ describe StoreAsInt::Base do
             dupped.convert 123
           end
         end
+
+        it "retains the current symbol" do
+          basis = StoreAsInt::Base.new nil, '@'
+          converted_w_sym = basis.convert(123)
+          expect(converted_w_sym.sym).to eq '@'
+        end
       end
 
       describe "decimals" do
@@ -462,7 +488,6 @@ describe StoreAsInt::Base do
             it "delegates to 'value'" do
               @method_missing_stubbed_convert_was_called = false
 
-              expect(Frazzled.get_frazzled).to eq false
               expect(stubbed_convert.dazzle).to eq false
               stubbed_convert.frazzle :dazzle
               expect(@method_missing_stubbed_convert_was_called).to eq false
@@ -508,12 +533,37 @@ describe StoreAsInt::Base do
       end
 
       describe "sym=" do
-        it "sets the instance variable @sym" do
-          subject.sym = "$"
-          expect(subject.sym).to eq '$'
-          subject.sym = "#"
-          expect(subject.sym).to_not eq '$'
-          expect(subject.sym).to eq '#'
+        context "truthy" do
+          it "sets the instance variable @sym" do
+            subject.sym = "$"
+            expect(subject.sym).to eq '$'
+            subject.sym = "#"
+            expect(subject.sym).to_not eq '$'
+            expect(subject.sym).to eq '#'
+            subject.sym = "false"
+            expect(subject.sym).to eq 'false'
+            subject.sym = true
+            expect(subject.sym).to eq 'true'
+          end
+        end
+
+        context "falsey" do
+          it "sets sym back to default" do
+            default_sym = StoreAsInt::Base.sym
+            dupped = subject.dup
+            [
+              [],
+              [nil],
+              [false]
+            ].each do |args|
+              dupped.sym = "$"
+              expect(dupped.sym).to eq '$'
+
+              expect(dupped.__send__(:sym=, *args)).to eq default_sym
+              expect(dupped.instance_variable_get :@sym).to eq default_sym
+              expect(dupped.sym).to eq default_sym.to_s
+            end
+          end
         end
       end
 
@@ -584,21 +634,70 @@ describe StoreAsInt::Base do
       end
 
       describe "to_s" do
+        let(:present_with_symbol) do
+          w_sym = StoreAsInt::Base.new 1.0
+          w_sym.sym = '@'
+          w_sym
+        end
+
+        let(:blank_with_symbol) do
+          w_sym = StoreAsInt::Base.new
+          w_sym.sym = '@'
+          w_sym
+        end
+
+        let(:symbol_false) { with_symb }
         context "present?" do
-          context "arg: false, nil (default)" do
-            it "returns a string without 'sym'"
+          context "arg: falsey (default)" do
+            it "returns a string without 'sym'" do
+              [
+                [],
+                [false],
+                [nil]
+              ].each do |args|
+                expect(present_with_symbol.to_s(*args)).to_not match /#{Regexp.quote(present_with_symbol.sym)}/
+                expect(present_with_symbol.to_s(*args)).to match /^\d+\.\d{#{present_with_symbol.decimals}}$/
+              end
+            end
           end
-          context "arg: true" do
-            it "returns a fully formatted string"
+
+          context "arg: truthy" do
+            it "returns a fully formatted string" do
+              expect(present_with_symbol.to_s(true)).to match /^#{Regexp.quote(present_with_symbol.sym)}\d+\.\d{#{present_with_symbol.decimals}}$/
+            end
+          end
+
+          context 'positive' do
+            it "should not have a negative symbol" do
+              expect(present_with_symbol.to_s(true)).to_not match /-/
+            end
+          end
+
+          context 'negative' do
+            it "should have a negative symbol" do
+              expect((-present_with_symbol).to_s(true)).to match /-/
+              expect((-present_with_symbol).to_s(true)).to match /^-#{Regexp.quote(present_with_symbol.sym)}\d+\.\d{#{present_with_symbol.decimals}}$/
+            end
           end
         end
 
         context "!present?" do
-          context "arg: false, nil (default)" do
-            it "returns an empty string"
+          context "arg: falsey (default)" do
+            it "returns an empty string" do
+              [
+                [],
+                [false],
+                [nil]
+              ].each do |args|
+                expect(blank_with_symbol.to_s(*args)).to eq ''
+              end
+            end
           end
-          context "arg: true" do
-            it "returns a fully formatted string"
+
+          context "arg: truthy" do
+            it "returns a fully formatted string" do
+              expect(blank_with_symbol.to_s(true)).to match /^#{Regexp.quote(blank_with_symbol.sym)}\d+\.\d{#{blank_with_symbol.decimals}}$/
+            end
           end
         end
       end

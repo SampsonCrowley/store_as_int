@@ -1,22 +1,14 @@
-class Frazzled
-  def self.set_frazzled(bool = false)
-    @frazzled ||= bool
-  end
-
-  def self.get_frazzled(*args)
-    was_frazzled = !!@frazzled
-    @frazzled = false
-    was_frazzled
-  end
+require_relative '../stub_models/frazzled'
+class IntegerFrazzler < Frazzled
 end
 
 module Frazzle
   def frazzle(*passed)
-    Frazzled.set_frazzled(true) if passed.any? {|arg| arg == :dazzle}
+    IntegerFrazzler.set(true) if passed.any? {|arg| arg == :dazzle}
   end
 
   def dazzle
-    Frazzled.get_frazzled
+    IntegerFrazzler.get
   end
 end
 

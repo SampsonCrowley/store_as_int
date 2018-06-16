@@ -107,7 +107,9 @@ module StoreAsInt
     end
 
     # == Instance Methods =====================================================
-    def initialize(new_val = nil)
+    def initialize(new_val = nil, new_sym = nil)
+      self.sym = new_sym if new_sym
+
       return self.num = nil unless new_val && (new_val != '')
 
       if new_val.is_a?(self.class)
@@ -151,7 +153,7 @@ module StoreAsInt
     end
 
     def convert(other_val)
-      self.class.new(other_val)
+      self.class.new(other_val, sym)
     end
 
     def decimals
@@ -169,13 +171,13 @@ module StoreAsInt
     def matcher
       @matcher ||= self.class.matcher
     end
-    
+
     def method_missing(name, *args, &blk)
       if self.operators[name.to_sym]
-        self.class.new(value.__send__(name, convert(*args).value))
+        convert(value.__send__(name, convert(*args).value))
       else
         ret = value.send(name, *args, &blk)
-        ret.is_a?(Numeric) ? self.class.new(ret) : ret
+        ret.is_a?(Numeric) ? convert(ret) : ret
       end
     end
 
@@ -192,8 +194,8 @@ module StoreAsInt
       @sym ||= self.class.sym || ''
     end
 
-    def sym=(new_sym)
-      @sym = new_sym
+    def sym=(new_sym = nil)
+      @sym = new_sym ? new_sym.to_s : self.class.sym
     end
 
     def to_d
