@@ -49,6 +49,17 @@ module StoreAsInt
       self::DECIMALS
     end
 
+    def self.json_create(o)
+      if o.is_a?(Hash)
+        for k, v in o
+          o[k.to_sym] = v
+        end
+        new((o[:value] || o[:int] || o[:decimal] || o[:float] || o[:str]), (o[:sym] || nil))
+      else
+        new(o)
+      end
+    end
+
     def self.sym
       self::SYM
     end
@@ -193,7 +204,6 @@ module StoreAsInt
       @operators ||= self.class.operators.dup
     end
 
-
     def sym
       @sym ||= self.class.sym || ''
     end
@@ -212,6 +222,7 @@ module StoreAsInt
 
     def to_h
       {
+        class: self.class,
         accuracy: accuracy,
         base: base,
         decimal: to_d,
