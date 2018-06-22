@@ -22,6 +22,7 @@ describe StoreAsInt::Base do
   subject { StoreAsInt::Base }
   let(:inherited) { InheritedFromBase }
   let(:fifteen) { StoreAsInt::Base.new(15.00) }
+  let(:alt_sym) { StoreAsInt::Base.new(15.00, '#') }
   let(:zero) { StoreAsInt::Base.new }
 
   describe 'Constants' do
@@ -51,6 +52,52 @@ describe StoreAsInt::Base do
       it "should also return true for it's own subclasses" do
         expect(subject === inherited).to be true
         expect(inherited === subject).to be false
+      end
+    end
+
+    describe :json_create do
+      let(:alt_options) do
+        {
+          accuracy: 15,
+          base: 10 ** 15,
+          decimals: 5,
+          value: 200,
+          str_format: ->(passed, w_sym) do
+            return 'asdf' unless w_sym
+            return 'AYYYY'
+          end
+        }
+      end
+      let(:alt_b_and_a) { StoreAsInt::Base.json_create(alt_options) }
+      let(:from_h) { StoreAsInt::Base.json_create(alt_sym.to_h) }
+
+      it 'should reparse to_h' do
+        require 'json'
+        expect(from_h).to respond_to :value
+        expect(from_h.value).to eq alt_sym.value
+        expect(from_h.sym).to eq alt_sym.sym
+        expect(from_h.sym).to_not eq fifteen.sym
+        expect(from_h.to_s(true)).to eq alt_sym.to_s(true)
+        expect(from_h.to_s(true)).to_not eq fifteen.to_s(true)
+
+        alt_options.each {|k, v| expect(alt_b_and_a.to_h[k]).to eq alt_options[k]}
+
+        expect(alt_b_and_a.to_s).to eq 'asdf'
+        expect(alt_b_and_a.to_s(true)).to eq 'AYYYY'
+      end
+
+      it 'should recreate a new store as int from to_json' do
+        expect(JSON.parse(alt_sym.to_json, create_additions: true)).to respond_to :value
+        expect(JSON.parse(alt_sym.to_json, create_additions: true).value).to eq alt_sym.value
+        expect(JSON.parse(alt_sym.to_json, create_additions: true).sym).to eq alt_sym.sym
+        expect(JSON.parse(alt_sym.to_json, create_additions: true).sym).to_not eq fifteen.sym
+        expect(JSON.parse(alt_sym.to_json, create_additions: true).to_s(true)).to eq alt_sym.to_s(true)
+        expect(JSON.parse(alt_sym.to_json, create_additions: true).to_s(true)).to_not eq fifteen.to_s(true)
+        expect(JSON.parse(alt_b_and_a.to_json, create_additions: true).accuracy).to eq alt_b_and_a.accuracy
+        expect(JSON.parse(alt_b_and_a.to_json, create_additions: true).base).to eq alt_b_and_a.base
+        expect(JSON.parse(alt_b_and_a.to_json, create_additions: true).decimals).to eq alt_b_and_a.decimals
+        expect(JSON.parse(alt_b_and_a.to_json, create_additions: true).to_s).to_not eq 'asdf'
+        expect(JSON.parse(alt_b_and_a.to_json, create_additions: true).to_s(true)).to_not eq 'AYYYY'
       end
     end
 

@@ -33,10 +33,6 @@ module StoreAsInt
       )
     end
 
-    def self.matcher
-      /^(\-|\+)?(?:#{sym.to_s.size > 0 ? Regexp.quote(sym.to_s) : '[^0-9]'}*)([0-9]+)(\.[0-9]+)?$/
-    end
-
     def self.accuracy
       self::ACCURACY || 0
     end
@@ -49,15 +45,44 @@ module StoreAsInt
       self::DECIMALS
     end
 
+    def self.hash_without_keys(h, keys, indifferent = false)
+      n = h.dup
+      if indifferent
+        new_keys = keys.dup
+        new_keys.each do |k|
+          keys << k.to_sym
+          keys << k.to_s
+        end
+        kys = keys.uniq
+      end
+      keys.each do |k|
+        n.delete(k)
+      end
+      n
+    end
+
     def self.json_create(o)
       if o.is_a?(Hash)
+        n = {}
         for k, v in o
-          o[k.to_sym] = v
+          n[k.to_sym] = v
         end
-        new((o[:value] || o[:int] || o[:decimal] || o[:float] || o[:str]), (o[:sym] || nil))
+        created = new((n[:value] || n[:int] || n[:decimal] || n[:float] || n[:str]), (n[:sym] || nil))
+
+        hash_without_keys(o, %w(decimal float int json_class str str_pretty value), true).each do |k, v|
+          k = k.dup
+          if created.respond_to?(k, true) || created.respond_to?(k.to_s.sub!('str_', ''))
+            created.instance_variable_set("@#{k}", v)
+          end
+        end
+        created
       else
         new(o)
       end
+    end
+
+    def self.matcher
+      /^(\-|\+)?(?:#{sym.to_s.size > 0 ? Regexp.quote(sym.to_s) : '[^0-9]'}*)([0-9]+)(\.[0-9]+)?$/
     end
 
     def self.sym
@@ -222,13 +247,13 @@ module StoreAsInt
 
     def to_h
       {
-        class: self.class,
         accuracy: accuracy,
         base: base,
         decimal: to_d,
         decimals: decimals,
         float: to_f,
         int: to_i,
+        json_class: self.class,
         str: to_s,
         str_format: str_format,
         str_matcher: matcher,
