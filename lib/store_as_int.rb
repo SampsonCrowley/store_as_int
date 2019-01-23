@@ -53,7 +53,7 @@ module StoreAsInt
   #
   # === Args
   # under_scored_class_name:: @string - method name to use when initializing
-  # base_value:: @integer - number to multiply and divide by when doing conversions
+  # accuracy:: @integer - power of ten base accuracy when doing conversions
   # number_of_decimals:: @integer - number of decimals to include in to_s method
   # symbol_to_use:: @string - symbol to use in to_s method
   # &block::
@@ -79,7 +79,7 @@ module StoreAsInt
   #   cts.to_s => CUSTOM_STR -$1.23
   #   cts.value => -123
   #
-  def self.register(under_scored_class_name, base_value = 1, number_of_decimals = 0, symbol_to_use = '', &block)
+  def self.register(under_scored_class_name, accuracy = 0, number_of_decimals = 0, symbol_to_use = '', &block)
     const_name = under_scored_class_name.split('_').map(&:capitalize).join('')
 
     begin
@@ -93,7 +93,7 @@ module StoreAsInt
 
       puts "  - Registering local constants for StoreAsInt::#{const_name}"
 
-      const_get(const_name).const_set 'BASE', (base_value && base_value.to_i) || 1
+      const_get(const_name).const_set 'ACCURACY', (accuracy && accuracy.to_i) || 1
       const_get(const_name).const_set 'DECIMALS', number_of_decimals.to_i
       const_get(const_name).const_set 'SYM', symbol_to_use.to_s
       const_get(const_name).const_set 'STR_FORMAT', block || nil
