@@ -278,9 +278,9 @@ module StoreAsInt
       end
     end
 
-    def to_s(w_sym = false)
+    def to_s(w_sym = false, padding: 0)
       begin
-        str_format.call(self, w_sym)
+        str_format.call(self, w_sym, padding)
       rescue
         puts $!.message
         puts $!.backtrace
@@ -294,12 +294,12 @@ module StoreAsInt
 
     private
       def str_format
-        @str_format ||= self.class.str_format || ->(passed, w_sym) do
-          return '' unless w_sym || passed.present?
+        @str_format ||= self.class.str_format || ->(passed, w_sym, padding) do
+          return '' unless w_sym || passed.present? || (padding.to_i > 0)
           str = "#{
             passed.negative_sign
           }#{
-            w_sym ? passed.sym : ''
+            (w_sym ? passed.sym : '').to_s.ljust(padding.to_i, ' ')
           }#{
             passed.decimals ?
             sprintf("%0.0#{passed.decimals.to_i}f", passed.to_d.abs) :

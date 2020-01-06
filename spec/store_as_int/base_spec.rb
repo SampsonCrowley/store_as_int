@@ -36,7 +36,7 @@ describe StoreAsInt::Base do
   describe 'Singleton Methods' do
     describe :=== do
       it 'should accept all numeric values' do
-        [1, 2.5, BigDecimal.new(1)].each do |val|
+        [1, 2.5, BigDecimal(1)].each do |val|
           expect(subject === val).to be true
         end
       end
@@ -62,7 +62,7 @@ describe StoreAsInt::Base do
           base: 10 ** 15,
           decimals: 5,
           value: 200,
-          str_format: ->(passed, w_sym) do
+          str_format: ->(passed, w_sym, *) do
             return 'asdf' unless w_sym
             return 'AYYYY'
           end
@@ -144,7 +144,7 @@ describe StoreAsInt::Base do
               [0.1234, 12340],
               [0.123456789, 12345],
               [1234.to_f, 1234 * (10 ** accuracy)],
-              [BigDecimal.new(0.1234567890, 10), 12345],
+              [BigDecimal(0.1234567890, 10), 12345],
             ].each do |raw, converted|
               str = raw.to_s
               int, decimals = str.split(".")
@@ -281,8 +281,8 @@ describe StoreAsInt::Base do
           expect(fifteen == (15 * (10 ** subject.accuracy))).to be true
           expect(15.0 == fifteen).to be true
           expect(fifteen == 15.0).to be true
-          expect(BigDecimal.new(15, 5) == fifteen).to be true
-          expect(fifteen == BigDecimal.new(15, 5)).to be true
+          expect(BigDecimal(15, 5) == fifteen).to be true
+          expect(fifteen == BigDecimal(15, 5)).to be true
 
           expect(fifteen == 14.0).to be false
           expect(14.0 == fifteen).to be false
@@ -399,7 +399,7 @@ describe StoreAsInt::Base do
 
         context 'numeric' do
           it "should return true" do
-            [0, 0.0, 1.to_f, -1, BigDecimal.new(0.1234567890, 10)].each do |val|
+            [0, 0.0, 1.to_f, -1, BigDecimal(0.1234567890, 10)].each do |val|
               expect(StoreAsInt::Base.new(val).present?).to eq true
             end
           end
@@ -643,7 +643,7 @@ describe StoreAsInt::Base do
 
       describe "to_d" do
         it "should return the BigDecimal value" do
-          bd = BigDecimal.new(1.0, subject.accuracy)
+          bd = BigDecimal(1.0, subject.accuracy)
           expect(StoreAsInt::Base.new(bd).to_d).to eq bd
         end
       end
@@ -738,6 +738,12 @@ describe StoreAsInt::Base do
           context "arg: truthy" do
             it "returns a fully formatted string" do
               expect(present_with_symbol.to_s(true)).to match /^#{Regexp.quote(present_with_symbol.sym)}\d+\.\d{#{present_with_symbol.decimals}}$/
+            end
+
+            context "padding: > 0" do
+              it "returns a fully formatted string" do
+                expect(present_with_symbol.to_s(true, padding: 10)).to match /^#{Regexp.quote(present_with_symbol.sym)}\s+\d+\.\d{#{present_with_symbol.decimals}}$/
+              end
             end
           end
 

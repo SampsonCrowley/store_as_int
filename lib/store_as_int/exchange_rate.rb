@@ -26,8 +26,8 @@ module StoreAsInt
     # == Comparison Methods ===================================================
 
     # == Instance Methods =====================================================
-    def exchange_rate_str
-      to_s(true)
+    def exchange_rate_str(padding: 0)
+      to_s(true, padding: padding.to_i)
     end
 
     def to_exchange_rate
@@ -36,8 +36,8 @@ module StoreAsInt
   end
 
   module ActsAsExchangeRateInt
-    def exchange_rate_str
-      to_exchange_rate.to_s(true)
+    def exchange_rate_str(padding: 0)
+      to_exchange_rate.to_s(true, padding: padding.to_i)
     end
 
     def to_exchange_rate

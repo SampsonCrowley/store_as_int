@@ -25,8 +25,8 @@ module StoreAsInt
     # == Comparison Methods ===================================================
 
     # == Instance Methods =====================================================
-    def dollar_str
-      to_s(true)
+    def dollar_str(padding: 0)
+      to_s(true, padding: padding.to_i)
     end
 
     def to_cents
@@ -35,8 +35,8 @@ module StoreAsInt
   end
 
   module ActsAsMoneyInt
-    def dollar_str
-      to_cents.to_s(true)
+    def dollar_str(padding: 0)
+      to_cents.to_s(true, padding: padding.to_i)
     end
 
     def to_cents
