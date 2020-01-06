@@ -739,11 +739,12 @@ describe StoreAsInt::Base do
             it "returns a fully formatted string" do
               expect(present_with_symbol.to_s(true)).to match /^#{Regexp.quote(present_with_symbol.sym)}\d+\.\d{#{present_with_symbol.decimals}}$/
             end
+          end
 
-            context "padding: > 0" do
-              it "returns a fully formatted string" do
-                expect(present_with_symbol.to_s(true, padding: 10)).to match /^#{Regexp.quote(present_with_symbol.sym)}\s+\d+\.\d{#{present_with_symbol.decimals}}$/
-              end
+          context "padding: > 0" do
+            it "returns a formatted string" do
+              expect(present_with_symbol.to_s(true, padding: 10)).to match /^#{Regexp.quote(present_with_symbol.sym)}\s+\d+\.\d{#{present_with_symbol.decimals}}$/
+              expect(present_with_symbol.to_s(false, padding: 10)).to match /^\s+\d+\.\d{#{present_with_symbol.decimals}}$/
             end
           end
 
@@ -777,6 +778,13 @@ describe StoreAsInt::Base do
           context "arg: truthy" do
             it "returns a fully formatted string" do
               expect(blank_with_symbol.to_s(true)).to match /^#{Regexp.quote(blank_with_symbol.sym)}\d+\.\d{#{blank_with_symbol.decimals}}$/
+            end
+          end
+
+          context "padding: > 0" do
+            it "returns a formatted string" do
+              expect(blank_with_symbol.to_s(true, padding: 10)).to match /^#{Regexp.quote(blank_with_symbol.sym)}\s+0\.\d{#{blank_with_symbol.decimals}}$/
+              expect(blank_with_symbol.to_s(false, padding: 10)).to match /^\s+0\.\d{#{blank_with_symbol.decimals}}$/
             end
           end
         end

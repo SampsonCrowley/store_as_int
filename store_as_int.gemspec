@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
   s.name        = 'store_as_int'
-  s.version     = '0.0.18'
+  s.version     = '0.0.19'
   s.date        = '2020-01-06'
   s.summary     = "Store values as integers for lossless calculations"
   s.description = "Seamlessly store different types of values (such as dollars) as integers"

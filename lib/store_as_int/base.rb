@@ -296,11 +296,12 @@ module StoreAsInt
       def str_format
         @str_format ||= self.class.str_format || ->(passed, w_sym, padding) do
           return '' unless w_sym || passed.present? || (padding.to_i > 0)
-          str = "#{
+          prefix = "#{
             passed.negative_sign
           }#{
-            (w_sym ? passed.sym : '').to_s.ljust(padding.to_i, ' ')
-          }#{
+            w_sym ? passed.sym : ''
+          }"
+          str = "#{
             passed.decimals ?
             sprintf("%0.0#{passed.decimals.to_i}f", passed.to_d.abs) :
             passed.to_i.to_s
@@ -308,9 +309,10 @@ module StoreAsInt
 
           str[-1] =
             str[-1].
-            gsub(/(\d{3})(?=\d)/, w_sym ? '\\1,' : '\\1')
+            gsub(/(\d{3})(?=\d)/, w_sym ? '\\1,' : '\\1').
+            ljust(padding.to_i, ' ')
 
-          str.join('.').reverse
+          "#{prefix}#{str.join('.').reverse}"
         end
       end
   end
