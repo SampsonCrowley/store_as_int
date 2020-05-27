@@ -45,6 +45,11 @@ StoreAsInt.exchange_rate(value)
 ```
 StoreAsInt.register(under_scored_class_name, base_value = 1 (i.e. 100 for dollars), number_of_decimals = 0, symbol_to_use = '', &block_to_use_for_to_s_formatting)
 
-StoreAsInt::UnderScoredClassName.new(value)
-StoreAsInt::under_scored_class_name(value)
+StoreAsInt::CamelCaseClassName.new(value)
+StoreAsInt.under_scored_class_name(value)
+```
+
+### Testing
+```
+bundle exec rspec
 ```
